@@ -54,7 +54,8 @@ class ModelEntry(ScheduleEntry):
         try:
             self.schedule = model.schedule
             logger.debug('schedule: {}'.format(self.schedule))
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             logger.error(
                 'Disabling schedule %s that was removed from database',
                 self.name,
@@ -341,7 +342,7 @@ class DatabaseScheduler(Scheduler):
                 name = self._dirty.pop()
                 try:
                     self.schedule[name].save()  # save to database
-                    logger.logger.debug(
+                    logger.debug(
                         '{name} save to database'.format(name=name))
                     _tried.add(name)
                 except (KeyError) as exc:

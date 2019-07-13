@@ -122,8 +122,7 @@ class CrontabSchedule(ModelBase, ModelMixin):
             hour=self.hour, day_of_week=self.day_of_week,
             day_of_month=self.day_of_month,
             month_of_year=self.month_of_year,
-            # tz=self.timezone
-            tz=tz.gettz(self.timezone)
+            # tz=tz.gettz(self.timezone),
             # app=current_app
         )
 
@@ -164,14 +163,16 @@ class SolarSchedule(ModelBase, ModelMixin):
             self.event,
             self.latitude,
             self.longitude,
-            nowfun=dt.datetime.now()
+            nowfun=dt.datetime.now
         )
 
     @classmethod
     def from_schedule(cls, session, schedule):
-        spec = {'event': schedule.event,
-                'latitude': schedule.lat,
-                'longitude': schedule.lon}
+        spec = {
+            'event': schedule.event,
+            'latitude': schedule.lat,
+            'longitude': schedule.lon
+        }
         model = session.query(SolarSchedule).filter_by(**spec).first()
         if not model:
             model = cls(**spec)

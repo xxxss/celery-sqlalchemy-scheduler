@@ -25,8 +25,9 @@ class TzAwareCrontab(schedules.crontab):
 
         super(TzAwareCrontab, self).__init__(
             minute=minute, hour=hour, day_of_week=day_of_week,
-            day_of_month=day_of_month,
-            month_of_year=month_of_year, nowfun=nowfun, app=app
+            day_of_month=day_of_month, month_of_year=month_of_year,
+            # tz=tz,
+            nowfun=nowfun, app=app
         )
 
     def nowfunc(self):
