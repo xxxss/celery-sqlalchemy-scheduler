@@ -13,6 +13,7 @@ celery = "==4.2.0"
 python-dotenv = "*"
 sqlalchemy = ">=1.3.0"
 mysql-connector = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3"

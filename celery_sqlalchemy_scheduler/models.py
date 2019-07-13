@@ -3,11 +3,11 @@
 import datetime as dt
 
 import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy.orm import relationship, foreign, remote
-
-from celery import schedules
-from celery.five import python_2_unicode_compatible
+from celery import current_app, schedules
 from celery.utils.log import get_logger
+from dateutil import tz
 
 from .tzcrontab import TzAwareCrontab
 from .session import ModelBase
@@ -33,7 +33,6 @@ class ModelMixin(object):
         return self
 
 
-@python_2_unicode_compatible
 class IntervalSchedule(ModelBase, ModelMixin):
     __tablename__ = 'celery_interval_schedule'
     __table_args__ = {'sqlite_autoincrement': True}
@@ -70,8 +69,33 @@ class IntervalSchedule(ModelBase, ModelMixin):
     def period_singular(self):
         return self.period[:-1]
 
+    @classmethod
+    def __declare_last__(cls):
+        @event.listens_for(cls, 'after_insert')
+        def receive_after_insert_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听insert之后
 
-@python_2_unicode_compatible
+            :param target: 模型
+            """
+            logger.debug('after_insert {}'.format(target))
+
+        @event.listens_for(cls, 'after_update')
+        def receive_after_update_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听update之后
+
+            :param target: 模型
+            """
+            logger.debug('after_update {}'.format(target))
+
+        @event.listens_for(cls, 'after_delete')
+        def receive_after_delete_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听delete之后
+
+            :param target: 模型
+            """
+            logger.debug('after_delete {}'.format(target))
+
+
 class CrontabSchedule(ModelBase, ModelMixin):
     __tablename__ = 'celery_crontab_schedule'
     __table_args__ = {'sqlite_autoincrement': True}
@@ -99,16 +123,19 @@ class CrontabSchedule(ModelBase, ModelMixin):
             day_of_month=self.day_of_month,
             month_of_year=self.month_of_year,
             # tz=self.timezone
+            tz=tz.gettz(self.timezone)
+            # app=current_app
         )
 
     @classmethod
     def from_schedule(cls, session, schedule):
-        spec = {'minute': schedule._orig_minute,
-                'hour': schedule._orig_hour,
-                'day_of_week': schedule._orig_day_of_week,
-                'day_of_month': schedule._orig_day_of_month,
-                'month_of_year': schedule._orig_month_of_year,
-                }
+        spec = {
+            'minute': schedule._orig_minute,
+            'hour': schedule._orig_hour,
+            'day_of_week': schedule._orig_day_of_week,
+            'day_of_month': schedule._orig_day_of_month,
+            'month_of_year': schedule._orig_month_of_year,
+        }
         if schedule.tz:
             spec.update({
                 'timezone': schedule.tz.zone
@@ -121,7 +148,6 @@ class CrontabSchedule(ModelBase, ModelMixin):
         return model
 
 
-@python_2_unicode_compatible
 class SolarSchedule(ModelBase, ModelMixin):
     __tablename__ = 'celery_solar_schedule'
     __table_args__ = {'sqlite_autoincrement': True}
@@ -195,7 +221,6 @@ class PeriodicTaskChanged(ModelBase, ModelMixin):
             return periodic_tasks.last_update
 
 
-@python_2_unicode_compatible
 class PeriodicTask(ModelBase, ModelMixin):
 
     __tablename__ = 'celery_periodic_task'
@@ -288,7 +313,28 @@ class PeriodicTask(ModelBase, ModelMixin):
             return self.solar.schedule
         raise ValueError('{} schedule is None!'.format(self.name))
 
+    @classmethod
+    def __declare_last__(cls):
+        @event.listens_for(cls, 'after_insert')
+        def receive_after_insert_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听insert之后
 
-# @event.listens_for(PeriodicTask, 'after_update')
-# def PeriodicTask_receive_after_update(mapper, connection, target):
-#     print('{} {} {}'.format(mapper, connection, target))
+            :param target: 模型
+            """
+            logger.debug('after_insert {}'.format(target))
+
+        @event.listens_for(cls, 'after_update')
+        def receive_after_update_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听update之后
+
+            :param target: 模型
+            """
+            logger.debug('after_update {}'.format(target))
+
+        @event.listens_for(cls, 'after_delete')
+        def receive_after_delete_for_cache_query(mapper, conn, target):
+            """注册Mapper事件，监听delete之后
+
+            :param target: 模型
+            """
+            logger.debug('after_delete {}'.format(target))
